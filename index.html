@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RGTOPUP - Game Topup & Add Money</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:#16a34a;color:#fff;padding:12px 24px;border-radius:30px;font-size:14px;font-weight:bold;opacity:0;transition:.3s;z-index:99999;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.err{background:#dc2626}
+
+/* LAYOUT */
+.wrap{max-width:480px;margin:0 auto;background:#0b1526;min-height:100vh;display:flex;flex-direction:column;position:relative;box-shadow:0 0 40px rgba(0,0,0,.6)}
+
+/* HEADER */
+.header{background:#111c33;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e2d4a;position:sticky;top:0;z-index:40}
+.logo{background:linear-gradient(135deg,#0b2545,#134074);padding:5px 12px;border-radius:6px;font-weight:900;font-size:18px;color:#ffcc00;font-style:italic}
+.user-info{display:flex;align-items:center;gap:10px}
+.bal-pill{background:#1e293b;border:1px solid #334155;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:bold;color:#4ade80}
+.auth-btn{background:#134074;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer}
+
+/* NOTICE BAR */
+.notice{background:#1e1b4b;border-bottom:1px solid #312e81;color:#c7d2fe;padding:10px 16px;font-size:13px;display:flex;align-items:center;gap:8px}
+
+/* CONTENT */
+.content{flex:1;padding:16px;padding-bottom:80px;overflow-y:auto}
+
+/* BANNER */
+.banner{background:linear-gradient(135deg,#134074,#1e293b);border-radius:12px;padding:20px;text-align:center;margin-bottom:16px;border:1px solid #1e2d4a}
+.banner h2{font-size:18px;color:#fff;margin-bottom:6px}
+.banner p{font-size:12px;color:#94a3b8}
+
+/* PRODUCTS GRID */
+.sec-title{font-size:15px;font-weight:bold;color:#38bdf8;margin:16px 0 10px;display:flex;justify-content:space-between;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card{background:#111c33;border:1px solid #1e2d4a;border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:.2s}
+.card:hover{border-color:#38bdf8;transform:translateY(-2px)}
+.card img{width:60px;height:60px;object-fit:cover;border-radius:10px;margin-bottom:8px;border:1px solid #1e2d4a}
+.card h4{font-size:13px;color:#fff;margin-bottom:4px}
+.card .price{font-size:12px;color:#4ade80;font-weight:bold}
+
+/* FORMS & MODALS */
+.box{background:#111c33;border:1px solid #1e2d4a;border-radius:12px;padding:16px;margin-bottom:14px}
+.box label{display:block;font-size:12px;color:#94a3b8;margin:10px 0 5px;font-weight:bold}
+.box input,.box select{width:100%;padding:11px;border-radius:8px;border:1px solid #1e2d4a;background:#0b1526;color:#e2e8f0;font-size:14px;outline:none}
+.box input:focus,.box select:focus{border-color:#38bdf8}
+.btn{width:100%;padding:12px;border:none;border-radius:8px;font-weight:bold;font-size:14px;color:#fff;background:linear-gradient(135deg,#0ea5e9,#2563eb);cursor:pointer;margin-top:14px}
+.btn.ok{background:#16a34a}
+.btn.ghost{background:#1e293b;border:1px solid #334155;margin-top:8px}
+
+/* NAVIGATION BAR (BOTTOM) */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#111c33;border-top:1px solid #1e2d4a;display:flex;justify-content:space-around;padding:10px 0;z-index:40}
+.nav-item{background:none;border:none;color:#94a3b8;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.nav-item.active{color:#38bdf8}
+.nav-item span:first-child{font-size:18px}
+
+/* LIST ITEM */
+.item{background:#111c33;border:1px solid #1e2d4a;border-radius:10px;padding:12px;margin-bottom:8px}
+.item .row{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.item b{color:#fff}
+.meta{font-size:11px;color:#94a3b8;margin-top:4px}
+.badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:bold}
+.badge.Pending{background:#422006;color:#fbbf24}
+.badge.Approved{background:#052e16;color:#4ade80}
+.badge.Cancelled,.badge.Rejected{background:#450a0a;color:#f87171}
+
+/* COPY NUMBER BOX */
+.pay-box{background:#17233c;border:1px solid #1e2d4a;border-radius:8px;padding:10px;margin-top:8px;display:flex;align-items:center;justify-content:space-between}
+.pay-box span{color:#4ade80;font-weight:bold;font-size:14px}
+.copy-btn{background:#0ea5e9;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:bold;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo" onclick="goTab('home')" style="cursor:pointer">RGTOPUP</div>
+    <div class="user-info">
+      <div class="bal-pill" id="hdrBal">৳0.00</div>
+      <button class="auth-btn" id="hdrAuthBtn" onclick="openAuthModal()">Login</button>
+    </div>
+  </header>
+
+  <!-- NOTICE -->
+  <div class="notice">
+    <span>📢</span> <span id="noticeText">ওয়েবসাইটে স্বাগতম!</span>
+  </div>
+
+  <!-- CONTENT CONTAINER -->
+  <div class="content" id="mainContent"></div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="nav">
+    <button class="nav-item active" id="nav-home" onclick="goTab('home')"><span>🏠</span><span>হোম</span></button>
+    <button class="nav-item" id="nav-addmoney" onclick="goTab('addmoney')"><span>💰</span><span>অ্যাড মানি</span></button>
+    <button class="nav-item" id="nav-orders" onclick="goTab('orders')"><span>🧾</span><span>অর্ডার হিস্ট্রি</span></button>
+    <button class="nav-item" id="nav-profile" onclick="goTab('profile')"><span>👤</span><span>প্রোফাইল</span></button>
+  </nav>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="authModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:16px">
+  <div class="box" style="width:100%;max-width:360px;margin:0">
+    <h3 id="authTitle" style="color:#fff;margin-bottom:12px">লগইন করুন</h3>
+    <div id="regFields" style="display:none">
+      <label>আপনার নাম</label>
+      <input id="uName" placeholder="পূর্ণ নাম">
+    </div>
+    <label>ইমেইল বা ফোন</label>
+    <input id="uEmail" placeholder="example@gmail.com">
+    <label>পাসওয়ার্ড</label>
+    <input type="password" id="uPass" placeholder="******">
+    <button class="btn" id="authSubmitBtn" onclick="handleAuth()">লগইন</button>
+    <button class="btn ghost" onclick="toggleAuthMode()" id="authToggleBtn">একাউন্ট নেই? রেজিস্টার করুন</button>
+    <button class="btn ghost" onclick="document.getElementById('authModal').style.display='none'" style="border-color:#dc2626;color:#f87171">বন্ধ করুন</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const get=(k,f)=>{try{const d=localStorage.getItem(k);return d?JSON.parse(d):f}catch(e){return f}};
+const set=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const val=id=>{const el=document.getElementById(id);return el?el.value.trim():''};
+
+let currentUser = get('rg_curr_user', null);
+let currentTab = 'home';
+let selectedProduct = null;
+
+let toastTimer;
+function toast(msg, err){
+  const t = document.getElementById('toast');
+  if(!t)return;
+  t.innerText = msg; t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.className='toast', 2200);
+}
+
+function copyText(txt){
+  navigator.clipboard.writeText(txt).then(()=>{
+    toast('📋 নম্বর কপি হয়েছে!');
+  }).catch(()=>{
+    toast('কপি করা যায়নি!', true);
+  });
+}
+
+function updHeader(){
+  const users = get('rg_users', []);
+  if(currentUser){
+    const u = users.find(x => x.email === currentUser);
+    if(u){
+      document.getElementById('hdrBal').innerText = '৳' + parseFloat(u.balance || 0).toFixed(2);
+      document.getElementById('hdrAuthBtn').innerText = 'Logout';
+      document.getElementById('hdrAuthBtn').onclick = logout;
+    }
+  } else {
+    document.getElementById('hdrBal').innerText = '৳0.00';
+    document.getElementById('hdrAuthBtn').innerText = 'Login';
+    document.getElementById('hdrAuthBtn').onclick = openAuthModal;
+  }
+  const s = get('rg_settings', {});
+  if(s.notice) document.getElementById('noticeText').innerText = s.notice;
+}
+
+function goTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const btn = document.getElementById('nav-' + tab);
+  if(btn) btn.classList.add('active');
+  renderView();
+}
+
+function renderView(){
+  updHeader();
+  const c = document.getElementById('mainContent');
+  if(currentTab === 'home') renderHome(c);
+  else if(currentTab === 'addmoney') renderAddMoney(c);
+  else if(currentTab === 'orders') renderOrders(c);
+  else if(currentTab === 'profile') renderProfile(c);
+  else if(currentTab === 'checkout') renderCheckout(c);
+}
+
+/* HOME */
+function renderHome(c){
+  const products = get('rg_products', [
+    {id:'p1', name:'Free Fire Diamond', cat:'Free Fire', price:85, img:'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=150', variants:[{name:'110 Diamonds', price:85},{name:'253 Diamonds', price:190}]}
+  ]);
+  const cats = [...new Set(products.map(p => p.cat))];
+
+  c.innerHTML = `
+    <div class="banner">
+      <h2>🔥 ফাস্ট গেম টপ-আপ</h2>
+      <p>স্বয়ংক্রিয়ভাবে মুহূর্তের মধ্যে ডায়মন্ড ও মেম্বারশিপ নিন!</p>
+    </div>
+    ${cats.map(cat => `
+      <div class="sec-title"><span>🎮 ${cat}</span></div>
+      <div class="grid">
+        ${products.filter(p => p.cat === cat).map(p => `
+          <div class="card" onclick="openCheckout('${p.id}')">
+            <img src="${p.img}" onerror="this.style.display='none'">
+            <h4>${p.name}</h4>
+            <div class="price">৳${p.variants && p.variants.length ? p.variants[0].price : p.price} থেকে শুরু</div>
+          </div>`).join('')}
+      </div>
+    `).join('')}
+  `;
+}
+
+/* CHECKOUT */
+function openCheckout(id){
+  const products = get('rg_products', []);
+  selectedProduct = products.find(p => p.id === id);
+  if(!selectedProduct) return;
+  currentTab = 'checkout';
+  renderView();
+}
+
+function renderCheckout(c){
+  if(!selectedProduct){ goTab('home'); return; }
+  let variants = selectedProduct.variants || [{name: selectedProduct.name, price: selectedProduct.price}];
+  const s = get('rg_settings', {});
+
+  c.innerHTML = `
+    <div class="sec-title" style="cursor:pointer" onclick="goTab('home')"><span>← ব্যাকে যান</span></div>
+    <div class="box">
+      <h3 style="color:#fff;margin-bottom:10px">${selectedProduct.name}</h3>
+      <label>প্যাকেজ নির্বাচন করুন</label>
+      <select id="chkVariant">
+        ${variants.map((v, i) => `<option value="${i}">${v.name} — ৳${v.price}</option>`).join('')}
+      </select>
+      
+      <label>গেম ইউজার আইডি (UID)</label>
+      <input id="chkUid" placeholder="আপনার গেম UID লিখুন">
+      
+      <label>পেমেন্ট মাধ্যম</label>
+      <select id="chkPay" onchange="togglePayDetails()">
+        <option value="Wallet">ওয়ালেট ব্যালেন্স থেকে কাটুন</option>
+        <option value="bKash">bKash (সেন্ড মনি)</option>
+        <option value="Nagad">Nagad (সেন্ড মনি)</option>
+      </select>
+
+      <!-- Dynamic Payment Details & Copy Number Box -->
+      <div id="manualPayInfo" style="display:none; margin-top:12px;">
+        <p style="font-size:12px;color:#fbbf24" id="payInstr">নিচের নাম্বারে টাকা পাঠিয়ে TrxID দিন:</p>
+        <div class="pay-box">
+          <span id="targetNumber">01984501921</span>
+          <button class="copy-btn" onclick="copyActiveNumber()">📋 কপি করুন</button>
+        </div>
+        <label>ট্রানজেকশন আইডি (TrxID)</label>
+        <input id="chkTrx" placeholder="যেমন: 9N78...">
+      </div>
+
+      <button class="btn ok" onclick="submitOrder()">অর্ডার নিশ্চিত করুন</button>
+    </div>
+  `;
+}
+
+function togglePayDetails(){
+  const payType = document.getElementById('chkPay').value;
+  const infoBox = document.getElementById('manualPayInfo');
+  const s = get('rg_settings', {});
+  const numSpan = document.getElementById('targetNumber');
+  
+  if(payType === 'bKash'){
+    infoBox.style.display = 'block';
+    numSpan.innerText = s.bkash || '01984501921';
+  } else if(payType === 'Nagad'){
+    infoBox.style.display = 'block';
+    numSpan.innerText = s.nagad || '01984501921';
+  } else {
+    infoBox.style.display = 'none';
+  }
+}
+
+function copyActiveNumber(){
+  const num = document.getElementById('targetNumber').innerText;
+  copyText(num);
+}
+
+function submitOrder(){
+  if(!currentUser){ openAuthModal(); return; }
+  const uid = val('chkUid');
+  if(!uid){ toast('দয়া করে গেম UID দিন!', true); return; }
+  
+  const vIndex = parseInt(document.getElementById('chkVariant').value);
+  let variants = selectedProduct.variants || [{name: selectedProduct.name, price: selectedProduct.price}];
+  const chosenVar = variants[vIndex];
+  const payType = document.getElementById('chkPay').value;
+  const trx = val('chkTrx');
+
+  if(payType !== 'Wallet' && !trx){
+    toast('দয়া করে ট্রানজেকশন আইডি (TrxID) দিন!', true);
+    return;
+  }
+
+  const users = get('rg_users', []);
+  const u = users.find(x => x.email === currentUser);
+
+  if(payType === 'Wallet'){
+    const bal = parseFloat(u.balance || 0);
+    if(bal < chosenVar.price){
+      toast('পর্যাপ্ত ব্যালেন্স নেই! অ্যাড মানি করুন।', true);
+      goTab('addmoney');
+      return;
+    }
+    u.balance = bal - chosenVar.price;
+    u.txs = u.txs || [];
+    u.txs.unshift({type:'debit', method:'Topup', amount:chosenVar.price, trx:'Order: '+selectedProduct.name, date:new Date().toLocaleString()});
+    set('rg_users', users);
+  }
+
+  const orders = get('rg_orders', []);
+  orders.unshift({
+    id: Date.now(),
+    user: currentUser,
+    pack: selectedProduct.name + ' (' + chosenVar.name + ')',
+    price: chosenVar.price,
+    uid: uid,
+    payType: payType,
+    trx: payType === 'Wallet' ? 'Wallet Paid' : trx,
+    status: 'Pending',
+    date: new Date().toLocaleString()
+  });
+  set('rg_orders', orders);
+
+  toast('✅ সফলভাবে অর্ডার জমা হয়েছে!');
+  goTab('orders');
+}
+
+/* ADD MONEY */
+function renderAddMoney(c){
+  const s = get('rg_settings', {});
+  c.innerHTML = `
+    <div class="sec-title"><span>💰 ওয়ালেটে টাকা যোগ করুন</span></div>
+    <div class="box">
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:8px">পেমেন্ট মাধ্যম সিলেক্ট করে নাম্বার কপি করুন:</p>
+      
+      <label>পেমেন্ট মাধ্যম</label>
+      <select id="addMethod" onchange="updateAddNum()">
+        <option value="bKash">bKash</option>
+        <option value="Nagad">Nagad</option>
+      </select>
+
+      <div class="pay-box" style="margin-top:10px">
+        <span id="addNumSpan">${s.bkash || '01984501921'}</span>
+        <button class="copy-btn" onclick="copyText(document.getElementById('addNumSpan').innerText)">📋 কপি করুন</button>
+      </div>
+
+      <label>টাকার পরিমাণ (৳)</label>
+      <input type="number" id="addAmount" placeholder="১০০">
+      <label>ট্রানজেকশন আইডি (TrxID)</label>
+      <input id="addTrx" placeholder="যেমন: 9N78...">
+      <button class="btn ok" onclick="submitAddMoney()">রিকোয়েস্ট পাঠান</button>
+    </div>
+  `;
+}
+
+function updateAddNum(){
+  const method = document.getElementById('addMethod').value;
+  const s = get('rg_settings', {});
+  const span = document.getElementById('addNumSpan');
+  if(method === 'bKash') span.innerText = s.bkash || '01984501921';
+  if(method === 'Nagad') span.innerText = s.nagad || '01984501921';
+}
+
+function submitAddMoney(){
+  if(!currentUser){ openAuthModal(); return; }
+  const amt = parseFloat(val('addAmount'));
+  const trx = val('addTrx');
+  if(!amt || amt <= 0 || !trx){ toast('পরিমাণ ও TrxID সঠিক দিন!', true); return; }
+
+  const reqs = get('rg_reqs', []);
+  reqs.unshift({
+    id: Date.now(),
+    user: currentUser,
+    method: val('addMethod'),
+    amount: amt,
+    trx: trx,
+    status: 'Pending',
+    date: new Date().toLocaleString()
+  });
+  set('rg_reqs', reqs);
+  toast('✅ রিকোয়েস্ট পাঠানো হয়েছে!');
+  goTab('profile');
+}
+
+/* ORDERS */
+function renderOrders(c){
+  if(!currentUser){ c.innerHTML = `<p style="text-align:center;padding:40px;color:#94a3b8">লগইন করুন অর্ডার দেখতে</p>`; return; }
+  const orders = get('rg_orders', []).filter(o => o.user === currentUser);
+  c.innerHTML = `
+    <div class="sec-title"><span>🧾 আপনার অর্ডারসমূহ</span></div>
+    ${orders.length ? orders.map(o => `
+      <div class="item">
+        <div class="row"><b>${o.pack}</b><span style="color:#4ade80;font-weight:bold">৳${o.price}</span></div>
+        <div class="meta">🎮 UID: ${o.uid}</div>
+        <div class="meta">🔖 TrxID: ${o.trx}</div>
+        <div class="meta">🕒 ${o.date}</div>
+        <div class="row" style="margin-top:6px">
+          <span class="badge ${o.status}">${o.status}</span>
+          <span style="font-size:11px;color:#94a3b8">${o.payType}</span>
+        </div>
+      </div>`).join('') : '<p style="text-align:center;color:#64748b;padding:30px">কোনো অর্ডার নেই</p>'}
+  `;
+}
+
+/* PROFILE */
+function renderProfile(c){
+  if(!currentUser){ openAuthModal(); return; }
+  const users = get('rg_users', []);
+  const u = users.find(x => x.email === currentUser) || {};
+  c.innerHTML = `
+    <div class="sec-title"><span>👤 আমার অ্যাকাউন্ট</span></div>
+    <div class="box">
+      <h3 style="color:#fff">${u.name || 'User'}</h3>
+      <p class="meta">📧 ${u.email}</p>
+      <p class="meta" style="margin-top:6px;color:#4ade80;font-weight:bold">💳 ব্যালেন্স: ৳${parseFloat(u.balance || 0).toFixed(2)}</p>
+    </div>
+    <div class="sec-title"><span>💳 ট্রানজেকশন হিস্ট্রি</span></div>
+    ${(u.txs || []).length ? u.txs.map(t => `
+      <div class="item">
+        <div class="row"><b>${t.method}</b><span style="color:${t.type==='credit'?'#4ade80':'#f87171'}">${t.type==='credit'?'+':'-'}৳${t.amount}</span></div>
+        <div class="meta">${t.trx}</div>
+        <div class="meta">${t.date}</div>
+      </div>`).join('') : '<p style="text-align:center;color:#64748b;padding:20px">কোনো লেনদেন নেই</p>'}
+  `;
+}
+
+/* AUTH LOGIC */
+let isReg = false;
+function openAuthModal(){ document.getElementById('authModal').style.display = 'flex'; }
+function toggleAuthMode(){
+  isReg = !isReg;
+  document.getElementById('authTitle').innerText = isReg ? 'রেজিস্ট্রেশন করুন' : 'লগইন করুন';
+  document.getElementById('regFields').style.display = isReg ? 'block' : 'none';
+  document.getElementById('authSubmitBtn').innerText = isReg ? 'রেজিস্ট्रार' : 'লগইন';
+  document.getElementById('authToggleBtn').innerText = isReg ? 'একাউন্ট আছে? লগইন করুন' : 'একাউন্ট নেই? রেজিস্টার করুন';
+}
+
+function handleAuth(){
+  const email = val('uEmail'), pass = val('uPass'), name = val('uName');
+  if(!email || !pass){ toast('ইমেইল ও পাসওয়ার্ড দিন!', true); return; }
+  let users = get('rg_users', []);
+
+  if(isReg){
+    if(users.some(x => x.email === email)){ toast('এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট খোলা হয়েছে!', true); return; }
+    users.push({name: name || 'User', email: email, pass: pass, balance: 0, txs: []});
+    set('rg_users', users);
+    currentUser = email;
+    set('rg_curr_user', currentUser);
+    toast('✅ সফলভাবে রেজিস্টার হয়েছে!');
+  } else {
+    const u = users.find(x => x.email === email && x.pass === pass);
+    if(!u){ toast('ভুল ইমেইল বা পাসওয়ার্ড!', true); return; }
+    currentUser = email;
+    set('rg_curr_user', currentUser);
+    toast('✅ সফলভাবে লগইন হয়েছে!');
+  }
+  document.getElementById('authModal').style.display = 'none';
+  renderView();
+}
+
+function logout(){
+  currentUser = null;
+  localStorage.removeItem('rg_curr_user');
+  toast('লগআউট হয়েছে');
+  renderView();
+}
+
+renderView();
+</script>
+</body>
+  </html>
